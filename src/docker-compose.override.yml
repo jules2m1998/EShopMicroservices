@@ -1,0 +1,119 @@
+services:
+  catalog.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ConnectionStrings__Database=Server=catalog.db;Port=5432;Database=CatalogDb;Username=postgres;Password=postgres;Include Error Detail=true
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/home/app/.aspnet/https/certif.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=pwd
+    ports:
+      - "6000:8080"
+      - "6060:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    networks:
+      - catalog
+    depends_on:
+      - catalog.db
+
+  catalog.db:
+    environment:
+      - POSTGRES_DB=CatalogDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - catalog_postgres:/var/lib/postgresql/data
+    networks:
+      - catalog
+
+  basket.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ConnectionStrings__Redis=basket.cache:6379
+      - GrpcSettings__DiscountUrl=https://dsicount.grpc:8081
+      - ConnectionStrings__Database=Server=basket.db;Port=5432;Database=BasketDb;Username=postgres;Password=postgres;Include Error Detail=true
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/home/app/.aspnet/https/certif.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=pwd
+    ports:
+      - "6001:8080"
+      - "6061:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    networks:
+      - basket
+    depends_on:
+      - basket.db
+      - dsicount.grpc
+
+  basket.db:
+    environment:
+      - POSTGRES_DB=BasketDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - basket_postgres:/var/lib/postgresql/data
+    networks:
+      - basket
+
+  basket.cache:
+    networks:
+      - basket
+    ports:
+      - "6379:6379"
+
+
+  dsicount.grpc:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ConnectionStrings__Database=Data Source=discountdb
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/home/app/.aspnet/https/certif.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=pwd
+    ports:
+      - "6002:8080"
+      - "6062:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    networks:
+      - basket
+
+  order.db:
+    container_name: orderDb
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=P@ssw0rd2024!
+    restart: always
+    ports:
+      - "1433:1433"
+
+  messagebroker:
+    container_name: messagebroker
+    hostname: ecommerce-mq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+
+networks:
+  catalog:
+  basket:
+
+volumes:
+  catalog_postgres:
+  basket_postgres:
+

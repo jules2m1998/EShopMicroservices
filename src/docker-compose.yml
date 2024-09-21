@@ -1,0 +1,34 @@
+services:
+  catalog.api:
+    image: ${DOCKER_REGISTRY-}catalogapi
+    build:
+      context: .
+      dockerfile: Catalog.Api/Dockerfile
+  
+  catalog.db:
+    image: postgres:12.20-alpine
+
+  basket.api:
+    image: ${DOCKER_REGISTRY-}basketapi
+    build:
+      context: .
+      dockerfile: Basket.Api/Dockerfile
+  
+  basket.db:
+    image: postgres:12.20-alpine
+  
+  basket.cache:
+    image: redis:7.4.0-alpine
+
+  dsicount.grpc:
+    image: ${DOCKER_REGISTRY-}dsicountgrpc
+    build:
+      context: .
+      dockerfile: Dsicount.Grpc/Dockerfile
+
+  order.db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+
+  messagebroker:
+    image: rabbitmq:management
+
